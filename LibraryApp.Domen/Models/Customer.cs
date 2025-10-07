@@ -9,28 +9,40 @@ public class Customer : IBaseEntity
     public string FirstName { get; set; }
     public string LastName { get; set; }
 
+    [Key]
     public string jmbg;
 
-    [Key]
-    public string JMBG
-    {
-        get => jmbg;
-        set
-        {
-            if (long.Parse(value) < 0) throw new Exception("JMBG cannot be less than 0");
-           // if (value.Length != 13) throw new Exception("JMBG must have length of 13");
-            jmbg = value;
-        }
-    }
 
     public Customer()
     {
 
     }
-    public Customer(string FirstName, string LastName, string JMBG)
+    public Customer(string firstName, string lastName, string jmbg)
     {
-        this.FirstName = FirstName;
-        this.LastName = LastName;
-        this.JMBG = JMBG;
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name cannot be null or empty.", nameof(firstName));
+
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name cannot be null or empty.", nameof(lastName));
+
+        if (string.IsNullOrWhiteSpace(jmbg))
+            throw new ArgumentException("JMBG cannot be null or empty.", nameof(jmbg));
+
+        if (jmbg.Length != 13 || !long.TryParse(jmbg, out _))
+            throw new ArgumentException("JMBG must contain exactly 13 digits.", nameof(jmbg));
+
+        FirstName = firstName;
+        LastName = lastName;
+        this.jmbg = jmbg;
+    }
+        
+    public override bool Equals(object obj)
+    {
+        if (obj is Customer other)
+        {
+            // Jednako ako je JMBG isti
+            return this.jmbg == other.jmbg;
+        }
+        return false;
     }
 }
