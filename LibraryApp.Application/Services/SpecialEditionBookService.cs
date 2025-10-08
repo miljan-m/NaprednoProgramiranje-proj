@@ -3,20 +3,31 @@ using LibraryApp.Mappers;
 using LibraryApp.Application.CustomExceptions;
 
 namespace LibraryApp.Application.Services;
-
+/// <summary>
+/// Servis koji upravlja poslovnom logikom za entitet <see cref="SpecialEditionBook"/>
+/// Omogućava kreiranje, vraćanje, ažuriranje i brisanje specijalnih izdanja knjiga
+/// </summary>
 public class SpecialEditionBookService : ISpecialEditionBookService
 {
-    
+
     private readonly IGenericRepository<SpecialEditionBook> specEditionBookRepository;
     private readonly IGenericRepository<Author> authorRepository;
-
+    /// <summary>
+    /// Inicijalizuje novi <see cref="SpecialEditionBookService"/> sa prosleđenim repozitorijumima
+    /// </summary>
+    /// <param name="specEditionBookRepository">Generički repozitorijum za entitet <see cref="SpecialEditionBook"/></param>
+    /// <param name="authorRepository">Generički repozitorijum za entitet <see cref="Author"/></param>
     public SpecialEditionBookService(IGenericRepository<SpecialEditionBook> specEditionBookRepository, IGenericRepository<Author> authorRepository)
     {
         this.specEditionBookRepository = specEditionBookRepository;
         this.authorRepository = authorRepository;
     }
 
-
+    /// <summary>
+    /// Vraća sve specijalne izdanja knjiga iz baze 
+    /// </summary>
+    /// <returns>Kolekciju DTO objekata tipa <see cref="GetSpecialBooksDTO"/> koji predstavljaju sve specijalne knjige</returns>
+    /// <exception cref="NotFoundException">Baca se ako baza ne sadrži nijednu specijalnu knjigu</exception>
     public async Task<IEnumerable<GetSpecialBooksDTO>> GetBooks()
     {
         var booksList = await specEditionBookRepository.GetAllAsync();
@@ -24,7 +35,13 @@ public class SpecialEditionBookService : ISpecialEditionBookService
         if (booksList == null) throw new NotFoundException("Database is empty");
         return books;
     }
-
+    /// <summary>
+    /// Vraća specijalno izdanje knjige u zavisnosti od ISBN
+    /// </summary>
+    /// <param name="isbn">Jedinstveni ISBN identifikator knjige</param>
+    /// <returns>DTO objekat tipa <see cref="GetSpecialBookDTO"/> sa podacima o knjizi</returns>
+    /// <exception cref="SpecBookInvalidArgumentException">Baca se ako ISBN sadrži nedozvoljene karaktere</exception>
+    /// <exception cref="SpecBookNotFoundException">Baca se ako knjiga sa datim ISBN-om ne postoji</exception>
     public async Task<GetSpecialBookDTO> GetBook(string isbn)
     {
         bool isbnValid = true;
@@ -38,9 +55,15 @@ public class SpecialEditionBookService : ISpecialEditionBookService
         if (book == null) throw new SpecBookNotFoundException(isbn);
         return book.MapDomainEntityToDto();
     }
-
+    /// <summary>
+    /// Briše specijalno izdanje knjige prema ISBN broju
+    /// </summary>
+    /// <param name="isbn">Jedinstveni ISBN identifikator knjige koja se briše</param>
+    /// <returns>Vraća TRUE ako je brisanje uspešno.</returns>
+    /// <exception cref="SpecBookInvalidArgumentException">Baca se ako ISBN sadrži nedozvoljene karaktere</exception>
+    /// <exception cref="SpecBookNotFoundException">Baca se ako knjiga sa datim ISBN-om ne postoji</exception>
     public async Task<bool> DeleteBook(string isbn)
-    {   
+    {
         bool isbnValid = true;
         char[] specChar = ['*', '\'', '\\', '+', '*', '/', '.', ',', '!', '@', '#', '$', '%', '^', '&', '(', ')', '_', '=', '|', '[', ']'];
         for (int i = 0; i < specChar.Length; i++)
@@ -53,6 +76,13 @@ public class SpecialEditionBookService : ISpecialEditionBookService
         await specEditionBookRepository.DeleteAsync(isbn);
         return true;
     }
+    /// <summary>
+    /// Kreira novo specijalno izdanje knjige
+    /// </summary>
+    /// <param name="bookCreateDTO">DTO objekat tipa <see cref="CreateSpecialBookDTO"/> sa podacima o novoj knjizi</param>
+    /// <param name="authorId">Jedinstveni identifikator autora knjige.</param>
+    /// <returns>DTO objekat tipa <see cref="GetSpecialBookDTO"/> sa podacima o kreiranoj knjizi</returns>
+    /// <exception cref="AuthorNotFoundException">Baca se ako autor sa datim ID-jem ne postoji</exception>
     public async Task<GetSpecialBookDTO> CreateBook(CreateSpecialBookDTO bookCreateDTO, string authorId)
     {
         var author = await authorRepository.GetOneAsync(authorId);
@@ -61,11 +91,18 @@ public class SpecialEditionBookService : ISpecialEditionBookService
         await specEditionBookRepository.CreateAsync(bookCreateDTO.MapDtoToDomainEntity(author));
         return book.MapDomainEntityToDto();
     }
-
+    /// <summary>
+    /// Ažurira specijalno izdanje knjige.
+    /// </summary>
+    /// <param name="isbn">Jedinstveni ISBN identifikator knjige koja se ažurira</param>
+    /// <param name="updatedBook">DTO objekat tipa <see cref="UpdateSpecialBookDTO"/> sa novim podacima o knjizi</param>
+    /// <returns>DTO objekat tipa <see cref="GetSpecialBookDTO"/> sa ažuriranim podacima o knjizi</returns>
+    /// <exception cref="SpecBookInvalidArgumentException">Baca se ako ISBN sadrži nedozvoljene karaktere</exception>
+    /// <exception cref="SpecBookNotFoundException">Baca se ako knjiga sa datim ISBN-om ne postoji</exception>
     public async Task<GetSpecialBookDTO> UpdateBook(string isbn, UpdateSpecialBookDTO updatedBook)
     {
         bool isbnValid = true;
-        char[] specChar = ['*', '\'', '\\', '+','*', '/', '.', ',', '!', '@', '#', '$', '%', '^', '&', '(', ')', '_', '=', '|', '[', ']'];
+        char[] specChar = ['*', '\'', '\\', '+', '*', '/', '.', ',', '!', '@', '#', '$', '%', '^', '&', '(', ')', '_', '=', '|', '[', ']'];
         for (int i = 0; i < specChar.Length; i++)
         {
             if (isbn.Contains(specChar[i])) isbnValid = false;
