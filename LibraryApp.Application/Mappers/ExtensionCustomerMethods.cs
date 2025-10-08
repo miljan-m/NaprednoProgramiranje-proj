@@ -21,7 +21,7 @@ public static class ExtensionCustomerMethods
     public static Customer MapDtoToDomainEntity(this CreateCustomerDTO customerDTO)
     {
         return new Customer
-        {   JMBG=customerDTO.JMBG,
+        {   
             FirstName = customerDTO.FirstName,
             LastName = customerDTO.LastName,
         };

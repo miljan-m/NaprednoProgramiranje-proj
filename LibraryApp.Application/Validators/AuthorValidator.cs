@@ -7,9 +7,9 @@ public class AuthorValidator : AbstractValidator<Author>
     public AuthorValidator()
     {
         RuleFor(x => x.Name).NotEmpty().WithMessage("Name cannot be empty string");
+        RuleFor(x => x.Name).NotNull().WithMessage("Name cannot be null");
+        RuleFor(x => x.LastName).NotNull().WithMessage("LastName cannot be null");
         RuleFor(x => x.LastName).NotEmpty().WithMessage("Last name cannot be empty string");
-        RuleFor(x => x.DateOfBirth).NotNull().WithMessage("Date of birth must be entered");
-        RuleFor(x => x.DateOfBirth).NotEmpty().WithMessage("Date of birth must be entered");
 
         
     }

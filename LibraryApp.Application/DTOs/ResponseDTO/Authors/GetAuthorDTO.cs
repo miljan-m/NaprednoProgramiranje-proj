@@ -8,5 +8,15 @@ public class GetAuthorDTO
 
     public List<GetBooksDTO> Books{ get; set; }
 
-    
+    public GetAuthorDTO()
+    {
+        
+    }
+    public GetAuthorDTO(string name, string lastname, DateTime date, List<GetBooksDTO> Books)
+    {
+        Name = name;
+        LastName = lastname;
+        DateOfBirth = date;
+        this.Books = Books;
+    }
 }

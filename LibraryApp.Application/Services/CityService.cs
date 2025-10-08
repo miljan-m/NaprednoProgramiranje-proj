@@ -15,9 +15,6 @@ public class CityService : ICityService
         this.cityRepository = cityRepository;
     }
 
-
-
-
     public async Task<City> CreateCity(City city)
     {
         await cityRepository.CreateAsync(city);

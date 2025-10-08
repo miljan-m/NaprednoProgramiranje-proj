@@ -28,7 +28,22 @@ public class Book : IBaseEntity, IBook
 
     }
 
-     public virtual string BookDetails()
+    public Book(string isbn, string title, string genre, bool available, string? authorId = null)
+    {
+            if (string.IsNullOrWhiteSpace(isbn))
+                throw new ArgumentException("ISBN cannot be null or empty.", nameof(isbn));
+
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentException("Title cannot be null or empty.", nameof(title));
+
+            Isbn = isbn;
+            Title = title;
+            Genre = genre;
+            Available = available;
+            AuthorId = authorId;
+    }
+
+    public virtual string BookDetails()
     {
         return $"ISBN: {Isbn}\n Title: {Title}\n Genre: {Genre}\n Available: {Available} \n Special edition:NO";
     }
@@ -37,5 +52,12 @@ public class Book : IBaseEntity, IBook
     {
         return "This is not special edition book. Autograph IS NOT available";
     }
-    
+    public override bool Equals(object obj)
+    {
+        if (obj is Book other)
+        {
+            return this.Isbn == other.Isbn;
+        }
+        return false;
+    }
 }

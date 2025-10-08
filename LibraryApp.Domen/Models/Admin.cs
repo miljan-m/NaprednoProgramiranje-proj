@@ -17,10 +17,29 @@ public class Admin : IBaseEntity
     {
 
     }
-    public Admin(string AdminId, string FirstName, string LastName)
+    public Admin(string adminId, string firstName, string lastName, DateTime? dateOfBirth)
     {
-        this.AdminId = AdminId;
-        this.FirstName = FirstName;
-        this.LastName = LastName;
+        if (string.IsNullOrWhiteSpace(adminId))
+            throw new ArgumentException("Admin ID cannot be null or empty.", nameof(adminId));
+
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name cannot be null or empty.", nameof(firstName));
+
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name cannot be null or empty.", nameof(lastName));
+
+        AdminId = adminId;
+        FirstName = firstName;
+        LastName = lastName;
+        DateOfBirth = dateOfBirth;
+    }
+        
+    public override bool Equals(object obj)
+    {
+        if (obj is Admin other)
+        {
+            return this.AdminId == other.AdminId;
+        }
+        return false;
     }
 }
