@@ -45,16 +45,16 @@ public class LibraryDBContext : DbContext
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var Author1 = new Author("1", "Author1Name", "Author1LastName");
-        var Author2 = new Author("2", "Author2Name", "Author2LastName");
-        var Author3 = new Author("3", "Author3Name", "Author3LastName");
-        var Author4 = new Author("4", "Author4Name", "Author4LastName");
+        var Author1 = new Author( "Author1Name", "Author1LastName",null);
+        var Author2 = new Author("Author2Name", "Author2LastName",null);
+        var Author3 = new Author( "Author3Name", "Author3LastName",null);
+        var Author4 = new Author("Author4Name", "Author4LastName",null);
 
-        var Admin1 = new Admin("1", "Admin1Name", "Admin1LastName");
-        var Admin2 = new Admin("2", "Admin2Name", "Admin2LastName");
-        var Admin3 = new Admin("3", "Admin3Name", "Admin3LastName");
-        var Admin4 = new Admin("4", "Admin4Name", "Admin4LastName");
-        var Admin5 = new Admin("5", "Admin5Name", "Admin5LastName");
+        var Admin1 = new Admin("1", "Admin1Name", "Admin1LastName",null);
+        var Admin2 = new Admin("2", "Admin2Name", "Admin2LastName",null);
+        var Admin3 = new Admin("3", "Admin3Name", "Admin3LastName",null);
+        var Admin4 = new Admin("4", "Admin4Name", "Admin4LastName",null);
+        var Admin5 = new Admin("5", "Admin5Name", "Admin5LastName",null);
 
         var Customer1 = new Customer("Customer1Name", "Customer1LastName", "123456");
         var Customer2 = new Customer("Customer2Name", "Customer2LastName", "239184762");
