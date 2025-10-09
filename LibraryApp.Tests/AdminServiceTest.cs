@@ -11,6 +11,8 @@ using FluentValidation.TestHelper;
 using LibraryApp.Application.DTOs.ResponseDTO.Admin;
 using LibraryApp.Mappers;
 using LibraryApp.Application.DTOs.RequestDTO.Admin;
+using LibraryApp.Application.Services.JSONServices;
+using System.Text.Json;
 
 namespace LibraryApp.Tests;
 
@@ -110,10 +112,10 @@ public class AdminServiceTest
     public async Task GetAdmin_ById_ReturnsAdmin()
     {
         var mockAdminRepo = new Mock<IGenericRepository<Admin>>();
-
+        var mockJSONService = new Mock<IJSONService<Admin>>();
         mockAdminRepo.Setup(c => c.GetOneAsync("1")).ReturnsAsync(new Admin { FirstName = "Name", LastName = "LastName", AdminId = "1" });
 
-        var AdminService = new AdminService(mockAdminRepo.Object);
+        var AdminService = new AdminService(mockAdminRepo.Object,mockJSONService.Object);
 
 
         var result = await AdminService.GetAdmin("1");
@@ -126,6 +128,8 @@ public class AdminServiceTest
     [Fact]
     public async void GettAllAdmins_ReturnsAllAdmins()
     {
+        var mockJSONService = new Mock<IJSONService<Admin>>();
+
         var admins = new List<Admin>()
         {
             new("1","Miljan","Mitic",null),
@@ -133,7 +137,7 @@ public class AdminServiceTest
         };
         var mockAdminRepo = new Mock<IGenericRepository<Admin>>();
         mockAdminRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(admins);
-        var adminService = new AdminService(mockAdminRepo.Object);
+        var adminService = new AdminService(mockAdminRepo.Object,mockJSONService.Object);
 
         var result = await adminService.GetAdmins();
         Assert.Equal(2, ((List<GetAdminsDTO>)result).Count);
@@ -143,10 +147,12 @@ public class AdminServiceTest
     [Fact]
     public async Task DeleteAdmin_ShouldDeleteAdmin_WhenAdminExists()
     {
+        var mockJSONService = new Mock<IJSONService<Admin>>();
+
         var admin = new Admin("1", "Miljan", "Mitic", null);
         var mockAdminRepo = new Mock<IGenericRepository<Admin>>();
         mockAdminRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(admin);
-        var adminService = new AdminService(mockAdminRepo.Object);
+        var adminService = new AdminService(mockAdminRepo.Object,mockJSONService.Object);
         mockAdminRepo.Setup(r => r.DeleteAsync("1")).ReturnsAsync(true);
 
         var result = await adminService.DeleteAdmin("1");
@@ -157,6 +163,7 @@ public class AdminServiceTest
     public async Task UpdateAdmin_ShouldUpdate_WhenAdminExists()
     {
         var mockAdminRepo = new Mock<IGenericRepository<Admin>>();
+        var mockJSONService = new Mock<IJSONService<Admin>>();
         var adminToUpdate = new Admin
         {
             FirstName = "Mirko",
@@ -169,7 +176,7 @@ public class AdminServiceTest
         mockAdminRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(admin);
         mockAdminRepo.Setup(r => r.UpdateAsync(It.Is<Admin>(a => a.FirstName == "Mirko" && a.LastName == "Mirkovic"), "1")).ReturnsAsync(adminToUpdate);
 
-        var adminService = new AdminService(mockAdminRepo.Object);
+        var adminService = new AdminService(mockAdminRepo.Object, mockJSONService.Object);
         var adminToUpdateDTO = new UpdateAdminDTO
         {
             FirstName = "Mirko",
@@ -187,8 +194,10 @@ public class AdminServiceTest
     [Fact]
     public async Task CreateAdmin_ShouldCreateAdmin_WhenValidInput()
     {
+        var mockJSONService = new Mock<IJSONService<Admin>>();
+
         var mockAdminRepo = new Mock<IGenericRepository<Admin>>();
-        var adminService = new AdminService(mockAdminRepo.Object);
+        var adminService = new AdminService(mockAdminRepo.Object,mockJSONService.Object);
 
         var createAdminDTO = new CreateAdminDTO
         {
@@ -214,8 +223,8 @@ public class AdminServiceTest
         Assert.Equal("Miljan", result.FirstName);
         Assert.Equal("Mitic", result.LastName);
     }
-    
-    
+
+
     [Theory]
     [InlineData("1", "1", true)]
     [InlineData("1", "2", false)]
@@ -226,5 +235,27 @@ public class AdminServiceTest
         var admin2 = new Admin { AdminId = id2 };
 
         Assert.Equal(expected, admin1.Equals(admin2));
+    }
+    
+    [Fact]
+    public async Task WriteJSONInFile_WritesCorrectAdminJson()
+    {
+        var service = new JSONAdminService<Admin>();
+        var admin = new Admin("1", "Miljan", "Mitic", new DateTime(1990, 1, 1));
+        var fileName = "AdminJsonFile.json";
+
+         service.WriteJSONInFile(admin);
+        Assert.True(File.Exists(fileName), "JSON file should exist after writing.");
+
+        var fileContent = await File.ReadAllTextAsync(fileName);
+        var deserialized = JsonSerializer.Deserialize<Admin>(fileContent);
+
+        Assert.NotNull(deserialized);
+        Assert.Equal(admin.AdminId, deserialized.AdminId);
+        Assert.Equal(admin.FirstName, deserialized.FirstName);
+        Assert.Equal(admin.LastName, deserialized.LastName);
+        Assert.Equal(admin.DateOfBirth, deserialized.DateOfBirth);
+
+        File.Delete(fileName);
     }
 }

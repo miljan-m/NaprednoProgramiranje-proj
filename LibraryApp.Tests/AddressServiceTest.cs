@@ -8,6 +8,9 @@ using LibraryApp.Application.Validators;
 using LibraryApp.Application.DTOs.RequestDTO.Address;
 using FluentValidation.TestHelper;
 using LibraryApp.Mappers;
+using LibraryApp.Application.Services.JSONServices;
+using System.Text.Json;
+using LibraryApp.Application.Interfaces;
 
 namespace LibraryApp.Tests;
 
@@ -138,10 +141,11 @@ public class AddressServiceTest
     {
         var mockAddressRepo = new Mock<IGenericRepository<Address>>();
         var mockCityRepo = new Mock<IGenericRepository<City>>();
+        var mockJSONService = new Mock<IJSONService<Address>>();
 
         mockAddressRepo.Setup(c => c.GetOneAsync("17530")).ReturnsAsync(new Address { id = "1", number = 1, street = "Milutina Stojanovica", PostalCode = "17530" });
 
-        var AddressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object);
+        var AddressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object,mockJSONService.Object);
 
 
         var result = await AddressService.GetAddress("17530");
@@ -156,6 +160,7 @@ public class AddressServiceTest
     {
         var mockAddressRepo = new Mock<IGenericRepository<Address>>();
         var mockCityRepo = new Mock<IGenericRepository<City>>();
+        var mockJSONService = new Mock<IJSONService<Address>>();
 
         var city1 = new City("17530", "Surdulica");
         var city2 = new City("11000", "Beograd");
@@ -167,7 +172,7 @@ public class AddressServiceTest
         };
 
         mockAddressRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(addresses);
-        var AddressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object);
+        var AddressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object,mockJSONService.Object);
 
         var result = await AddressService.GetAddresses();
         Assert.Equal(2, ((List<Address>)result).Count);
@@ -183,10 +188,11 @@ public class AddressServiceTest
 
         var mockAddressRepo = new Mock<IGenericRepository<Address>>();
         var mockCityRepo = new Mock<IGenericRepository<City>>();
+        var mockJSONService = new Mock<IJSONService<Address>>();
 
         mockAddressRepo.Setup(r => r.GetOneAsync(address.id)).ReturnsAsync(address);
         mockAddressRepo.Setup(r => r.DeleteAsync(address.id)).ReturnsAsync(true);
-        var AddressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object);
+        var AddressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object,mockJSONService.Object);
 
         var result = await AddressService.DeleteAddress(address.id);
 
@@ -196,44 +202,73 @@ public class AddressServiceTest
     [Fact]
     public async Task UpdateAddress_ShouldUpdate_WhenCityExist_()
     {
+        var mockJSONService = new Mock<IJSONService<Address>>();
+
         var city = new City("17530", "Surdulica");
         var address = new Address("1", 14, "Milutina Stojanovic", city, "17530");
         var mockCityRepo = new Mock<IGenericRepository<City>>();
         var mockAddressRepo = new Mock<IGenericRepository<Address>>();
         var addressToUpdate = new Address("1", 14, "Jugoslovenska", city, "17530");
 
-        var addressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object);
+        var addressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object,mockJSONService.Object);
         mockCityRepo.Setup(r => r.GetOneAsync("17530")).ReturnsAsync(city);
         mockAddressRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(address);
         mockAddressRepo.Setup(r => r.UpdateAsync(addressToUpdate, "1"));
 
-        var result =await addressService.UpdateAddress(addressToUpdate, "1", "17530");
+        var result = await addressService.UpdateAddress(addressToUpdate, "1", "17530");
         Assert.NotNull(result);
         Assert.Equal("Jugoslovenska", result.street);
 
     }
 
     [Fact]
-public async Task CreateAddress_ShouldCreate_WhenCityExists()
-{
-    var mockAddressRepo = new Mock<IGenericRepository<Address>>();
-    var mockCityRepo = new Mock<IGenericRepository<City>>();
+    public async Task CreateAddress_ShouldCreate_WhenCityExists()
+    {
+        var mockJSONService = new Mock<IJSONService<Address>>();
 
-    var city = new City("17530", "Surdulica");
-    var newAddress = new Address("1", 12, "Milutina Stojanovica", city, "17530");
+        var mockAddressRepo = new Mock<IGenericRepository<Address>>();
+        var mockCityRepo = new Mock<IGenericRepository<City>>();
 
-    mockCityRepo.Setup(r => r.GetOneAsync("17530")).ReturnsAsync(city);
+        var city = new City("17530", "Surdulica");
+        var newAddress = new Address("1", 12, "Milutina Stojanovica", city, "17530");
 
-    mockAddressRepo.Setup(r => r.CreateAsync(It.IsAny<Address>())).ReturnsAsync(newAddress);
+        mockCityRepo.Setup(r => r.GetOneAsync("17530")).ReturnsAsync(city);
 
-    var addressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object);
+        mockAddressRepo.Setup(r => r.CreateAsync(It.IsAny<Address>())).ReturnsAsync(newAddress);
 
-    var result = await addressService.CreateAddress(newAddress.MapDomainEntityToDTO(), "17530");
+        var addressService = new AddressService(mockAddressRepo.Object, mockCityRepo.Object,mockJSONService.Object);
 
-    Assert.NotNull(result);
-    Assert.Equal("Milutina Stojanovica", result.street);
-    Assert.Equal("17530", result.PostalCode);
-    Assert.Equal(city, result.City);
-}
+        var result = await addressService.CreateAddress(newAddress.MapDomainEntityToDTO(), "17530");
+
+        Assert.NotNull(result);
+        Assert.Equal("Milutina Stojanovica", result.street);
+        Assert.Equal("17530", result.PostalCode);
+        Assert.Equal(city, result.City);
+    }
+
+[Fact]
+    public async Task WriteJSONInFile_WritesCorrectJson()
+    {
+        var service = new JSONAddressService<Address>();
+        var testAddress = new Address
+        {
+            street = "Main Street",
+            number = 123
+        };
+        var fileName = "AddressJsonFile.json";
+
+        service.WriteJSONInFile(testAddress);
+
+        Assert.True(File.Exists(fileName), "JSON file should exist after writing.");
+
+        var fileContent = await File.ReadAllTextAsync(fileName);
+        var deserialized = JsonSerializer.Deserialize<Address>(fileContent);
+
+        Assert.NotNull(deserialized);
+        Assert.Equal(testAddress.street, deserialized.street);
+        Assert.Equal(testAddress.number, deserialized.number);
+
+        File.Delete(fileName);
+    }
 
 }

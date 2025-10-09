@@ -9,6 +9,7 @@ namespace LibraryApp.Application.Services;
 /// </summary>
 public class SpecialEditionBookService : ISpecialEditionBookService
 {
+    private readonly IJSONService<SpecialEditionBook> bookJSON;
 
     private readonly IGenericRepository<SpecialEditionBook> specEditionBookRepository;
     private readonly IGenericRepository<Author> authorRepository;
@@ -17,10 +18,11 @@ public class SpecialEditionBookService : ISpecialEditionBookService
     /// </summary>
     /// <param name="specEditionBookRepository">Generički repozitorijum za entitet <see cref="SpecialEditionBook"/></param>
     /// <param name="authorRepository">Generički repozitorijum za entitet <see cref="Author"/></param>
-    public SpecialEditionBookService(IGenericRepository<SpecialEditionBook> specEditionBookRepository, IGenericRepository<Author> authorRepository)
+    public SpecialEditionBookService(IGenericRepository<SpecialEditionBook> specEditionBookRepository, IGenericRepository<Author> authorRepository, IJSONService<SpecialEditionBook> bookJSON)
     {
         this.specEditionBookRepository = specEditionBookRepository;
         this.authorRepository = authorRepository;
+        this.bookJSON = bookJSON;
     }
 
     /// <summary>
@@ -53,6 +55,7 @@ public class SpecialEditionBookService : ISpecialEditionBookService
         if (isbnValid == false) throw new SpecBookInvalidArgumentException(isbn);
         var book = await specEditionBookRepository.GetOneAsync(isbn);
         if (book == null) throw new SpecBookNotFoundException(isbn);
+        bookJSON.WriteJSONInFile(book);
         return book.MapDomainEntityToDto();
     }
     /// <summary>

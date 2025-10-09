@@ -12,13 +12,15 @@ public class CityService : ICityService
 {
     
     private readonly IGenericRepository<City> cityRepository;
+    private readonly IJSONService<City> cityJSON;
+
     /// <summary>
     /// Inicijalizuje novi <see cref="CityService"/> sa prosleđenim repozitorijumom za gradove
     /// </summary>
     /// <param name="cityRepository">Generički repozitorijum za entitet <see cref="City"/></param>
-    public CityService(IGenericRepository<City> cityRepository)
+    public CityService(IGenericRepository<City> cityRepository,IJSONService<City> cityJSON)
     {
-
+        this.cityJSON = cityJSON;
         this.cityRepository = cityRepository;
     }
     /// <summary>
@@ -58,6 +60,7 @@ public class CityService : ICityService
     public async Task<City> GetCity(string postalCode)
     {
         var city = await cityRepository.GetOneAsync(postalCode);
+        cityJSON.WriteJSONInFile(city);
         return city;
     }
     /// <summary>

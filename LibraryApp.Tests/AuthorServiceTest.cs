@@ -9,6 +9,8 @@ using LibraryApp.Application.DTOs.ResponseDTO.Authors;
 using LibraryApp.Application.DTOs.RequestDTO.Author;
 using LibraryApp.Application.Validators;
 using FluentValidation.TestHelper;
+using System.Text.Json;
+using LibraryApp.Application.Services.JSONServices;
 
 namespace LibraryApp.Tests;
 
@@ -143,9 +145,10 @@ public class AuthorServiceTest
     public async Task GetAuthor_ById_ReturnsAuthor()
     {
         var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+        var mockJSONService = new Mock<IJSONService<Author>>();
         mockAuthorRepo.Setup(c => c.GetOneAsync("1")).ReturnsAsync(new Author { AuthorId = "1", Name = "Ivo", LastName = "Andric" });
 
-        var authorService = new AuthorService(mockAuthorRepo.Object);
+        var authorService = new AuthorService(mockAuthorRepo.Object,mockJSONService.Object);
 
         var result = await authorService.GetAuthor("1");
 
@@ -156,7 +159,9 @@ public class AuthorServiceTest
 
     [Fact]
     public async Task GetAllAuthors_ReturnsAllAuthors()
-    {
+    {   
+        var mockJSONService = new Mock<IJSONService<Author>>();
+        
         var authors = new List<Author>
             {
                 new("Ivo", "Andric", new DateTime(1892, 10, 9)),
@@ -166,7 +171,7 @@ public class AuthorServiceTest
         var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
         mockAuthorRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(authors);
 
-        var authorService = new AuthorService(mockAuthorRepo.Object);
+        var authorService = new AuthorService(mockAuthorRepo.Object,mockJSONService.Object);
 
         var result = await authorService.GetAuthors();
 
@@ -179,11 +184,12 @@ public class AuthorServiceTest
     {
         var author = new Author("Ivo", "Andric", null);
         var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
-
+        var mockJSONService = new Mock<IJSONService<Author>>();
+        
         mockAuthorRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(author);
         mockAuthorRepo.Setup(r => r.DeleteAsync("1")).ReturnsAsync(true);
 
-        var authorService = new AuthorService(mockAuthorRepo.Object);
+        var authorService = new AuthorService(mockAuthorRepo.Object,mockJSONService.Object);
 
         var result = await authorService.DeleteAuthor("1");
 
@@ -194,6 +200,7 @@ public class AuthorServiceTest
     public async Task UpdateAuthor_ShouldUpdate_WhenAuthorExists()
     {
         var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+        var mockJSONService = new Mock<IJSONService<Author>>();
 
         var existingAuthor = new Author("Ivo", "Andric", null);
         var updatedAuthor = new Author("Mesa", "Selimovic", null);
@@ -201,7 +208,7 @@ public class AuthorServiceTest
         mockAuthorRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(existingAuthor);
         mockAuthorRepo.Setup(r => r.UpdateAsync(updatedAuthor, "1")).ReturnsAsync(updatedAuthor);
 
-        var authorService = new AuthorService(mockAuthorRepo.Object);
+        var authorService = new AuthorService(mockAuthorRepo.Object,mockJSONService.Object);
 
         var updateDto = new AuthorUpdateDTO
         {
@@ -220,8 +227,10 @@ public class AuthorServiceTest
     [Fact]
     public async Task CreateAuthor_ShouldCreateAuthor_WhenValidInput()
     {
+        var mockJSONService = new Mock<IJSONService<Author>>();
+
         var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
-        var authorService = new AuthorService(mockAuthorRepo.Object);
+        var authorService = new AuthorService(mockAuthorRepo.Object,mockJSONService.Object);
 
         var createDto = new AuthorCreateDTO
         {
@@ -243,7 +252,7 @@ public class AuthorServiceTest
         Assert.Equal("Ivo", result.Name);
         Assert.Equal("Andric", result.LastName);
     }
-    
+
     [Theory]
     [InlineData("1", "1", true)]
     [InlineData("1", "2", false)]
@@ -254,6 +263,34 @@ public class AuthorServiceTest
 
         Assert.Equal(expected, author1.Equals(author2));
     }
-}
+    
+
+    [Fact]
+        public async Task WriteJSONInFile_ShouldCreateJsonFile_WithCorrectContent()
+        {
+            var author = new Author("John", "Doe", new DateTime(1980, 1, 1))
+            {
+                AuthorId = "1"
+            };
+            var service = new JSONAuthorService<Author>();
+            var fileName = "AuthorJsonFile.json";
+
+            service.WriteJSONInFile(author);
+            Assert.True(File.Exists(fileName), "JSON file was not created.");
+
+            var fileContent = await File.ReadAllTextAsync(fileName);
+            var deserializedAuthor = JsonSerializer.Deserialize<Author>(fileContent);
+
+            Assert.NotNull(deserializedAuthor);
+            Assert.Equal(author.AuthorId, deserializedAuthor.AuthorId);
+            Assert.Equal(author.Name, deserializedAuthor.Name);
+            Assert.Equal(author.LastName, deserializedAuthor.LastName);
+            Assert.Equal(author.DateOfBirth, deserializedAuthor.DateOfBirth);
+
+            if (File.Exists(fileName))
+                File.Delete(fileName);
+        }
+    }
+
 
     
