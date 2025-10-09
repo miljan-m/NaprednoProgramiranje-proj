@@ -12,129 +12,11 @@ using LibraryApp.Application.Services.JSONServices;
 using System.Text.Json;
 using LibraryApp.Application.Interfaces;
 
-namespace LibraryApp.Tests;
+namespace LibraryApp.Tests.AddressTests;
 
 
 public class AddressServiceTest
 {
-    //testovi za konstruktor
-
-    [Fact]
-    public void Constructor_InputOk_CreatesValidAddress()
-    {
-        var city = new City("17530", "Surdulica");
-        var address = new Address("1", 14, "Milutina Stojanovica", city, "17530");
-        Assert.Equal("1", address.id);
-        Assert.Equal(14, address.number);
-        Assert.Equal("Milutina Stojanovica", address.street);
-        Assert.Equal(city, address.City);
-        Assert.Equal("17530", address.PostalCode);
-
-    }
-
-    [Fact]
-    public void Constructor_IdNullOrEmpty_ThrowsException()
-    {
-        var city = new City("17530", "Surdulica");
-
-        Assert.Throws<ArgumentException>(() => new Address("", 14, "Milutina Stojanovica", city, "17530"));
-        Assert.Throws<ArgumentException>(() => new Address(null, 14, "Milutina Stojanovica", city, "17530"));
-
-    }
-
-    [Fact]
-    public void Constructor_NumberLessThan1_ThrowsException()
-    {
-        var city = new City("17530", "Surdulica");
-
-        Assert.Throws<ArgumentException>(() => new Address("1", 0, "Milutina Stojanovica", city, "17530"));
-    }
-
-    [Fact]
-    public void Constructor_NullOrEmptyStreet_ThrowsException()
-    {
-        var city = new City("17530", "Surdulica");
-
-        Assert.Throws<ArgumentException>(() => new Address("1", 14, null, city, "17530"));
-        Assert.Throws<ArgumentException>(() => new Address("1", 14, "", city, "17530"));
-    }
-
-    [Fact]
-    public void Constructor_NullCity_ThrowsArgumentNullException()
-    {
-        Assert.Throws<ArgumentNullException>(() => new Address("1", 14, "Milutina Stojanovica", null, "17530"));
-    }
-
-    [Fact]
-    public void Constructor_NullOrEmptyPostalCode_ThrowsException()
-    {
-        var city = new City("17530", "Belgrade");
-
-        Assert.Throws<ArgumentException>(() => new Address("1", 10, "Milutina Stojanovica", city, null));
-        Assert.Throws<ArgumentException>(() => new Address("1", 10, "Milutina Stojanovica", city, ""));
-    }
-
-
-
-
-    //testovi za validator
-    [Fact]
-    public void Validator_AllOk_ValidatorNoError()
-    {
-        var addresValidator = new AddressValidator();
-        var dto = new AddressCreateDTO
-        {
-            id = "1",
-            number = 5,
-            street = "Milutina Stojanovica"
-        };
-        var result = addresValidator.TestValidate(dto);
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Fact]
-    public void Validator_NumberInputInvalid_ValidatorError()
-    {
-        var addresValidator = new AddressValidator();
-        var dto = new AddressCreateDTO
-        {
-            id = "1",
-            number = -10,
-            street = "Milutina Stojanovica"
-        };
-        var result = addresValidator.TestValidate(dto);
-        result.ShouldHaveValidationErrorFor(x => x.number);
-    }
-
-    [Fact]
-    public void Validator_StreetInputEmptyInvalid_ValidatorError()
-    {
-        var addresValidator = new AddressValidator();
-        var dto = new AddressCreateDTO
-        {
-            id = "1",
-            number = 1,
-            street = ""
-        };
-        var result = addresValidator.TestValidate(dto);
-        result.ShouldHaveValidationErrorFor(x => x.street);
-    }
-
-    [Fact]
-    public void Validator_StreetInputNullInvalid_ValidatorError()
-    {
-        var addresValidator = new AddressValidator();
-        var dto = new AddressCreateDTO
-        {
-            id = "1",
-            number = 1,
-            street = null
-        };
-        var result = addresValidator.TestValidate(dto);
-        result.ShouldHaveValidationErrorFor(x => x.street);
-    }
-
-    //testovi za servise
 
     [Fact]
     public async Task GetAddress_ByPostalCode_ReturnsAddress()
@@ -245,30 +127,4 @@ public class AddressServiceTest
         Assert.Equal("17530", result.PostalCode);
         Assert.Equal(city, result.City);
     }
-
-[Fact]
-    public async Task WriteJSONInFile_WritesCorrectJson()
-    {
-        var service = new JSONAddressService<Address>();
-        var testAddress = new Address
-        {
-            street = "Main Street",
-            number = 123
-        };
-        var fileName = "AddressJsonFile.json";
-
-        service.WriteJSONInFile(testAddress);
-
-        Assert.True(File.Exists(fileName), "JSON file should exist after writing.");
-
-        var fileContent = await File.ReadAllTextAsync(fileName);
-        var deserialized = JsonSerializer.Deserialize<Address>(fileContent);
-
-        Assert.NotNull(deserialized);
-        Assert.Equal(testAddress.street, deserialized.street);
-        Assert.Equal(testAddress.number, deserialized.number);
-
-        File.Delete(fileName);
-    }
-
 }

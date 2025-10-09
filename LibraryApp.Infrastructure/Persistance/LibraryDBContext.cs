@@ -48,7 +48,12 @@ public class LibraryDBContext : DbContext
         var Author1 = new Author( "Author1Name", "Author1LastName",null);
         var Author2 = new Author("Author2Name", "Author2LastName",null);
         var Author3 = new Author( "Author3Name", "Author3LastName",null);
-        var Author4 = new Author("Author4Name", "Author4LastName",null);
+        var Author4 = new Author("Author4Name", "Author4LastName", null);
+        Author1.AuthorId = "1";
+        Author2.AuthorId = "2";
+        Author3.AuthorId = "3";
+        Author4.AuthorId = "4";
+
 
         var Admin1 = new Admin("1", "Admin1Name", "Admin1LastName",null);
         var Admin2 = new Admin("2", "Admin2Name", "Admin2LastName",null);
@@ -56,11 +61,11 @@ public class LibraryDBContext : DbContext
         var Admin4 = new Admin("4", "Admin4Name", "Admin4LastName",null);
         var Admin5 = new Admin("5", "Admin5Name", "Admin5LastName",null);
 
-        var Customer1 = new Customer("Customer1Name", "Customer1LastName", "123456");
-        var Customer2 = new Customer("Customer2Name", "Customer2LastName", "239184762");
-        var Customer3 = new Customer("Customer3Name", "Customer3LastName", "329456");
-        var Customer4 = new Customer("Customer4Name", "Customer4LastName", "324857");
-        var Customer5 = new Customer("Customer5Name", "Customer5LastName", "238476");
+        var Customer1 = new Customer("Customer1Name", "Customer1LastName", "1234567891234");
+        var Customer2 = new Customer("Customer2Name", "Customer2LastName", "1234567891235");
+        var Customer3 = new Customer("Customer3Name", "Customer3LastName", "1234567891236");
+        var Customer4 = new Customer("Customer4Name", "Customer4LastName", "1234567891237");
+        var Customer5 = new Customer("Customer5Name", "Customer5LastName", "1234567891238");
 
         modelBuilder.Entity<Book>().HasDiscriminator<string>("Discriminator").HasValue<Book>("Book").HasValue<SpecialEditionBook>("Special");
         modelBuilder.Entity<Author>().HasData(Author1, Author2, Author3, Author4);

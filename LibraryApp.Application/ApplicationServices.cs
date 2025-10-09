@@ -30,6 +30,7 @@ public static class ApplicationServices
         services.AddScoped<IJSONService<Author>, JSONAuthorService<Author>>();
         services.AddScoped<IJSONService<City>, JSONCityService<City>>();
         services.AddScoped<IJSONService<Customer>, JSONCustomerService<Customer>>();
+        services.AddScoped<IJSONService<SpecialEditionBook>, JSONCustomerService<SpecialEditionBook>>();
 
         return services;
     }

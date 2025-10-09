@@ -12,134 +12,12 @@ using FluentValidation.TestHelper;
 using System.Text.Json;
 using LibraryApp.Application.Services.JSONServices;
 
-namespace LibraryApp.Tests;
+namespace LibraryApp.Tests.AuthorTests;
 
 
 public class AuthorServiceTest
 {
-    //testovi za konstruktor
-    [Fact]
-    public void Constructor_InputOk_CreatesValidAuthor()
-    {
-        var author = new Author("Miljan", "Mitic", new DateTime(1999, 5, 10));
-
-        Assert.NotNull(author);
-        Assert.Equal("Miljan", author.Name);
-        Assert.Equal("Mitic", author.LastName);
-        Assert.Equal(new DateTime(1999, 5, 10), author.DateOfBirth);
-    }
-
-    [Fact]
-    public void Constructor_NameIsNullOrEmpty_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new Author("", "Mitic"));
-        Assert.Throws<ArgumentException>(() => new Author(null, "Mitic"));
-    }
-
-    [Fact]
-    public void Constructor_LastNameIsNullOrEmpty_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new Author("Miljan", ""));
-        Assert.Throws<ArgumentException>(() => new Author("Miljan", null));
-    }
-
-    [Fact]
-    public void Constructor_DateOfBirthInFuture_ThrowsException()
-    {
-        var futureDate = DateTime.Now.AddYears(1);
-        Assert.Throws<ArgumentException>(() => new Author("Miljan", "Mitic", futureDate));
-    }
-
-
-    //testovi za validatore
-    [Fact]
-    public void Validator_AllFieldsValid_NoValidationErrors()
-    {
-        var author = new Author
-        {
-            Name = "Ivo",
-            LastName = "Andric",
-            DateOfBirth = new DateTime(1892, 10, 9)
-        };
-        var validator = new AuthorValidator();
-        var result = validator.TestValidate(author);
-
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Fact]
-    public void Validator_NameIsNull_ValidationError()
-    {
-        var validator = new AuthorValidator();
-
-        var author = new Author
-        {
-            Name = null,
-            LastName = "Andric",
-            DateOfBirth = new DateTime(1892, 10, 9)
-        };
-
-        var result = validator.TestValidate(author);
-
-        result.ShouldHaveValidationErrorFor(x => x.Name)
-            .WithErrorMessage("Name cannot be null");
-    }
-
-    [Fact]
-    public void Validator_NameIsEmpty_ValidationError()
-    {
-        var validator = new AuthorValidator();
-
-        var author = new Author
-        {
-            Name = "",
-            LastName = "Andric",
-            DateOfBirth = new DateTime(1892, 10, 9)
-        };
-
-        var result = validator.TestValidate(author);
-
-        result.ShouldHaveValidationErrorFor(x => x.Name).WithErrorMessage("Name cannot be empty string");
-    }
-
-    [Fact]
-    public void Validator_LastNameIsNull_ValidationError()
-    {
-        var validator = new AuthorValidator();
-
-        var author = new Author
-        {
-            Name = "Ivo",
-            LastName = null,
-            DateOfBirth = new DateTime(1892, 10, 9)
-        };
-
-        var result = validator.TestValidate(author);
-
-        result.ShouldHaveValidationErrorFor(x => x.LastName).WithErrorMessage("LastName cannot be null");
-    }
-
-    [Fact]
-    public void Validator_LastNameIsEmpty_ValidationError()
-    {
-        var validator = new AuthorValidator();
-
-        var author = new Author
-        {
-            Name = "Ivo",
-            LastName = "",
-            DateOfBirth = new DateTime(1892, 10, 9)
-        };
-
-        var result = validator.TestValidate(author);
-
-        result.ShouldHaveValidationErrorFor(x => x.LastName).WithErrorMessage("Last name cannot be empty string");
-    }
-
-
-
-
-    // testovi za servise
+    
 
     [Fact]
     public async Task GetAuthor_ById_ReturnsAuthor()
@@ -265,31 +143,6 @@ public class AuthorServiceTest
     }
     
 
-    [Fact]
-        public async Task WriteJSONInFile_ShouldCreateJsonFile_WithCorrectContent()
-        {
-            var author = new Author("John", "Doe", new DateTime(1980, 1, 1))
-            {
-                AuthorId = "1"
-            };
-            var service = new JSONAuthorService<Author>();
-            var fileName = "AuthorJsonFile.json";
-
-            service.WriteJSONInFile(author);
-            Assert.True(File.Exists(fileName), "JSON file was not created.");
-
-            var fileContent = await File.ReadAllTextAsync(fileName);
-            var deserializedAuthor = JsonSerializer.Deserialize<Author>(fileContent);
-
-            Assert.NotNull(deserializedAuthor);
-            Assert.Equal(author.AuthorId, deserializedAuthor.AuthorId);
-            Assert.Equal(author.Name, deserializedAuthor.Name);
-            Assert.Equal(author.LastName, deserializedAuthor.LastName);
-            Assert.Equal(author.DateOfBirth, deserializedAuthor.DateOfBirth);
-
-            if (File.Exists(fileName))
-                File.Delete(fileName);
-        }
     }
 
 

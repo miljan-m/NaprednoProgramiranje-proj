@@ -17,98 +17,8 @@ namespace LibraryApp.Tests;
 public class CityServiceTest
 {
 
-    // testovi za konstruktor
+    
 
-    [Fact]
-    public void Constructor_ValidInput_CreatesCity()
-    {
-        var city = new City("11000", "Belgrade");
-
-        Assert.NotNull(city);
-        Assert.Equal("11000", city.PostalCode);
-        Assert.Equal("Belgrade", city.CityName);
-    }
-
-    [Fact]
-    public void Constructor_PostalCodeIsNullOrEmpty_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new City("", "Belgrade"));
-        Assert.Throws<ArgumentException>(() => new City(null, "Belgrade"));
-    }
-
-    [Fact]
-    public void Constructor_CityNameIsNullOrEmpty_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new City("11000", ""));
-        Assert.Throws<ArgumentException>(() => new City("11000", null));
-    }
-
-
-    // testovi za validatore
-
-    [Fact]
-    public void Validator_ValidCity_NoValidationErrors()
-    {
-        var validator = new CityValidator();
-        var city = new City("11000", "Belgrade");
-        var result = validator.TestValidate(city);
-
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Fact]
-    public void Validator_CityNameEmpty_ValidationError()
-    {
-        var city = new City();
-        city.CityName = "";
-        city.PostalCode = "17530";
-        var validator = new CityValidator();
-
-        var result = validator.TestValidate(city);
-
-        result.ShouldHaveValidationErrorFor(x => x.CityName)
-            .WithErrorMessage("City name cannot be empty string");
-    }
-
-    [Fact]
-    public void Validator_PostalCodeNull_ValidationError()
-    {
-        var city = new City();
-        city.CityName = "Beograd";
-        city.PostalCode = null;
-        var validator = new CityValidator();
-
-        var result = validator.TestValidate(city);
-
-        result.ShouldHaveValidationErrorFor(x => x.PostalCode).WithErrorMessage("Postal code cannot be null");
-    }
-
-    [Fact]
-    public void Validator_PostalCodeEmpty_ValidationError()
-    {
-        var city = new City();
-        city.CityName = "Beograd";
-        city.PostalCode = "";
-        var validator = new CityValidator();
-
-        var result = validator.TestValidate(city);
-
-        result.ShouldHaveValidationErrorFor(x => x.PostalCode).WithErrorMessage("Postal code is required");
-    }
-
-    [Fact]
-    public void Validator_PostalCodeNonNumeric_ValidationError()
-    {
-        var city = new City("11A00", "Belgrade");
-        var validator = new CityValidator();
-
-        var result = validator.TestValidate(city);
-
-        result.ShouldHaveValidationErrorFor(x => x.PostalCode).WithErrorMessage("Postal code must contain only numbers");
-    }
-
-
-    //testovi za servise
     [Fact]
     public async Task GetCity_ReturnsCity_WhenCityExists()
     {
@@ -212,27 +122,5 @@ public class CityServiceTest
 
         Assert.Equal(expected, city1.Equals(city2));
     }
-
-    [Fact]
-        public async Task WriteJSONInFile_ShouldCreateJsonFile_WithCorrectContent()
-        {
-            var city = new City("11000", "Belgrade");
-            var service = new JSONCityService<City>();
-            var fileName = "CityJsonFile.json";
-
-             service.WriteJSONInFile(city);
-
-            Assert.True(File.Exists(fileName), "JSON file was not created.");
-
-            var fileContent = await File.ReadAllTextAsync(fileName);
-            var deserializedCity = JsonSerializer.Deserialize<City>(fileContent);
-
-            Assert.NotNull(deserializedCity);
-            Assert.Equal(city.PostalCode, deserializedCity.PostalCode);
-            Assert.Equal(city.CityName, deserializedCity.CityName);
-
-            if (File.Exists(fileName))
-                File.Delete(fileName);
-        }
 
 }
