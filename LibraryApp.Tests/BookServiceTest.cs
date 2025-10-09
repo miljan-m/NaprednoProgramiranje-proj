@@ -10,6 +10,8 @@ using LibraryApp.Application.CustomExceptions;
 using LibraryApp.Application.DTOs.RequestDTO.Book;
 using LibraryApp.Application.Validators;
 using FluentValidation.TestHelper;
+using System.Text.Json;
+using LibraryApp.Application.Services.JSONServices;
 
 namespace LibraryApp.Tests;
 
@@ -72,215 +74,253 @@ public class BookServiceTest
 
     // testovi za validatore
 
-        [Fact]
-        public void Validator_AllFieldsValid_NoValidationErrors()
+    [Fact]
+    public void Validator_AllFieldsValid_NoValidationErrors()
+    {
+        var validator = new BookValidator();
+        var book = new Book
         {
-            var validator = new BookValidator();
-            var book = new Book
-            {
-                AuthorId = "1",
-                Isbn = "12345",
-                Title = "Na Drini Cuprija",
-                Genre = "Roman"
-            };
+            AuthorId = "1",
+            Isbn = "12345",
+            Title = "Na Drini Cuprija",
+            Genre = "Roman"
+        };
 
-            var result = validator.TestValidate(book);
-            result.ShouldNotHaveAnyValidationErrors();
-        }
+        var result = validator.TestValidate(book);
+        result.ShouldNotHaveAnyValidationErrors();
+    }
 
-        [Fact]
-        public void Validator_AuthorIdEmpty_ValidationError()
+    [Fact]
+    public void Validator_AuthorIdEmpty_ValidationError()
+    {
+        var validator = new BookValidator();
+
+        var book = new Book
         {
-            var validator = new BookValidator();
+            AuthorId = "",
+            Isbn = "12345",
+            Title = "Book",
+            Genre = "Roman"
+        };
 
-            var book = new Book
-            {
-                AuthorId = "",
-                Isbn = "12345",
-                Title = "Book",
-                Genre = "Roman"
-            };
+        var result = validator.TestValidate(book);
+        result.ShouldHaveValidationErrorFor(x => x.AuthorId).WithErrorMessage("Author id must be entered");
+    }
 
-            var result = validator.TestValidate(book);
-            result.ShouldHaveValidationErrorFor(x => x.AuthorId).WithErrorMessage("Author id must be entered");
-        }
+    [Fact]
+    public void Validator_IsbnEmpty_ValidationError()
+    {
+        var validator = new BookValidator();
 
-        [Fact]
-        public void Validator_IsbnEmpty_ValidationError()
+        var book = new Book
         {
-            var validator = new BookValidator();
+            AuthorId = "1",
+            Isbn = "",
+            Title = "Book",
+            Genre = "Roman"
+        };
 
-            var book = new Book
-            {
-                AuthorId = "1",
-                Isbn = "",
-                Title = "Book",
-                Genre = "Roman"
-            };
+        var result = validator.TestValidate(book);
+        result.ShouldHaveValidationErrorFor(x => x.Isbn).WithErrorMessage("ISBN cannot be empty string");
+    }
 
-            var result = validator.TestValidate(book);
-            result.ShouldHaveValidationErrorFor(x => x.Isbn).WithErrorMessage("ISBN cannot be empty string");
-        }
+    [Fact]
+    public void Validator_TitleEmpty_ValidationError()
+    {
+        var validator = new BookValidator();
 
-        [Fact]
-        public void Validator_TitleEmpty_ValidationError()
+        var book = new Book
         {
-            var validator = new BookValidator();
+            AuthorId = "1",
+            Isbn = "12345",
+            Title = "",
+            Genre = "Roman"
+        };
 
-            var book = new Book
-            {
-                AuthorId = "1",
-                Isbn = "12345",
-                Title = "",
-                Genre = "Roman"
-            };
+        var result = validator.TestValidate(book);
+        result.ShouldHaveValidationErrorFor(x => x.Title).WithErrorMessage("Title cannot be empty string");
+    }
 
-            var result = validator.TestValidate(book);
-            result.ShouldHaveValidationErrorFor(x => x.Title).WithErrorMessage("Title cannot be empty string");
-        }
+    [Fact]
+    public void Validator_GenreEmpty_ValidationError()
+    {
+        var validator = new BookValidator();
 
-        [Fact]
-        public void Validator_GenreEmpty_ValidationError()
+        var book = new Book
         {
-            var validator = new BookValidator();
+            AuthorId = "1",
+            Isbn = "12345",
+            Title = "Book",
+            Genre = ""
+        };
 
-            var book = new Book
-            {
-                AuthorId = "1",
-                Isbn = "12345",
-                Title = "Book",
-                Genre = ""
-            };
-
-            var result = validator.TestValidate(book);
-            result.ShouldHaveValidationErrorFor(x => x.Genre).WithErrorMessage("Genre cannot be empty string");
-        }
+        var result = validator.TestValidate(book);
+        result.ShouldHaveValidationErrorFor(x => x.Genre).WithErrorMessage("Genre cannot be empty string");
+    }
 
 
     // testovi za servise
 
-        [Fact]
-        public async Task GetBook_ById_ReturnsBook()
-        {
-            var mockBookRepo = new Mock<IGenericRepository<Book>>();
-            var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+    [Fact]
+    public async Task GetBook_ById_ReturnsBook()
+    {
+        var mockBookRepo = new Mock<IGenericRepository<Book>>();
+        var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+        var mockJSONService = new Mock<IJSONService<Book>>();
+        mockBookRepo.Setup(c => c.GetOneAsync("12345"))
+            .ReturnsAsync(new Book { Isbn = "12345", Title = "Book", Genre = "Drama", AuthorId = "1" });
 
-            mockBookRepo.Setup(c => c.GetOneAsync("12345"))
-                .ReturnsAsync(new Book { Isbn = "12345", Title = "Book", Genre = "Drama", AuthorId = "1" });
+        var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object, mockJSONService.Object);
 
-            var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object);
+        var result = await bookService.GetBook("12345");
 
-            var result = await bookService.GetBook("12345");
+        Assert.NotNull(result);
+        Assert.Equal("Book", result.Title);
+        Assert.Equal("Drama", result.Genre);
+    }
 
-            Assert.NotNull(result);
-            Assert.Equal("Book", result.Title);
-            Assert.Equal("Drama", result.Genre);
-        }
+    [Fact]
+    public async Task GetBooks_ReturnsAllBooks()
+    {
+        var mockJSONService = new Mock<IJSONService<Book>>();
 
-        [Fact]
-        public async Task GetBooks_ReturnsAllBooks()
-        {
-            var books = new List<Book>
+        var books = new List<Book>
             {
                 new("111", "Book1", "Genre1", true),
                 new("222", "Book2", "Genre2", false)
             };
 
-            var mockBookRepo = new Mock<IGenericRepository<Book>>();
-            var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+        var mockBookRepo = new Mock<IGenericRepository<Book>>();
+        var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
 
-            mockBookRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(books);
+        mockBookRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(books);
 
-            var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object);
+        var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object,mockJSONService.Object);
 
-            var result = await bookService.GetBooks();
+        var result = await bookService.GetBooks();
 
-            Assert.NotNull(result);
-            Assert.Equal(2, result.Count());
-        }
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+    }
 
-        [Fact]
-        public async Task DeleteBook_ShouldDeleteBook_WhenBookExists()
+    [Fact]
+    public async Task DeleteBook_ShouldDeleteBook_WhenBookExists()
+    {   
+        var mockJSONService = new Mock<IJSONService<Book>>();
+
+        var book = new Book("111", "Book1", "Genre1", true);
+        var mockBookRepo = new Mock<IGenericRepository<Book>>();
+        var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+
+        mockBookRepo.Setup(r => r.GetOneAsync("111")).ReturnsAsync(book);
+        mockBookRepo.Setup(r => r.DeleteAsync("111")).ReturnsAsync(true);
+
+        var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object,mockJSONService.Object);
+
+        var result = await bookService.DeleteBook("111");
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task UpdateBook_ShouldUpdate_WhenBookExists()
+    {
+        var mockBookRepo = new Mock<IGenericRepository<Book>>();
+        var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+        var mockJSONService = new Mock<IJSONService<Book>>();
+
+        var existingBook = new Book("123", "OldTitle", "OldGenre", true);
+        var updatedBookEntity = new Book("123", "NewTitle", "NewGenre", true);
+
+        mockBookRepo.Setup(r => r.GetOneAsync("123")).ReturnsAsync(existingBook);
+        mockBookRepo.Setup(r => r.UpdateAsync(It.IsAny<Book>(), "123")).ReturnsAsync(updatedBookEntity);
+
+        var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object,mockJSONService.Object);
+
+        var updateDto = new BookUpdateDTO
         {
-            var book = new Book("111", "Book1", "Genre1", true);
-            var mockBookRepo = new Mock<IGenericRepository<Book>>();
-            var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+            Title = "NewTitle",
+            Genre = "NewGenre",
+            Available = true
+        };
 
-            mockBookRepo.Setup(r => r.GetOneAsync("111")).ReturnsAsync(book);
-            mockBookRepo.Setup(r => r.DeleteAsync("111")).ReturnsAsync(true);
+        var result = await bookService.UpdateBook("123", updateDto);
 
-            var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object);
+        Assert.NotNull(result);
+        Assert.Equal("NewTitle", result.Title);
+        Assert.Equal("NewGenre", result.Genre);
+    }
 
-            var result = await bookService.DeleteBook("111");
+    [Fact]
+    public async Task CreateBook_ShouldCreate_WhenAuthorExists()
+    {
+        var mockBookRepo = new Mock<IGenericRepository<Book>>();
+        var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+        var mockJSONService = new Mock<IJSONService<Book>>();
 
-            Assert.True(result);
-        }
+        var author = new Author("Ivo", "Andric");
+        mockAuthorRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(author);
 
-        [Fact]
-        public async Task UpdateBook_ShouldUpdate_WhenBookExists()
+        var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object,mockJSONService.Object);
+
+        var createDto = new BookCreateDTO
         {
-            var mockBookRepo = new Mock<IGenericRepository<Book>>();
-            var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
+            Title = "Na Drini Cuprija",
+            Genre = "Roman",
+            Available = true
+        };
 
-            var existingBook = new Book("123", "OldTitle", "OldGenre", true);
-            var updatedBookEntity = new Book("123", "NewTitle", "NewGenre", true);
+        var createdBook = new Book("12345", "Na Drini Cuprija", "Roman", true, "1");
 
-            mockBookRepo.Setup(r => r.GetOneAsync("123")).ReturnsAsync(existingBook);
-            mockBookRepo.Setup(r => r.UpdateAsync(It.IsAny<Book>(), "123")).ReturnsAsync(updatedBookEntity);
+        mockBookRepo.Setup(r => r.CreateAsync(It.IsAny<Book>())).ReturnsAsync(createdBook);
 
-            var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object);
+        var result = await bookService.CreateBook(createDto, "1");
 
-            var updateDto = new BookUpdateDTO
+        Assert.NotNull(result);
+        Assert.Equal("Na Drini Cuprija", result.Title);
+        Assert.Equal("Roman", result.Genre);
+    }
+
+    [Theory]
+    [InlineData("123", "123", true)]
+    [InlineData("123", "456", false)]
+    public void Book_Equals_ReturnsExpected(string isbn1, string isbn2, bool expected)
+    {
+        var book1 = new Book { Isbn = isbn1 };
+        var book2 = new Book { Isbn = isbn2 };
+
+        Assert.Equal(expected, book1.Equals(book2));
+    }
+
+    [Fact]
+        public async Task WriteJSONInFile_ShouldCreateJsonFile_WithCorrectContent()
+        {
+            var book = new Book("12345", "Sample Book", "Fiction", true, "1")
             {
-                Title = "NewTitle",
-                Genre = "NewGenre",
-                Available = true
+                Author = new Author("John", "Doe", new DateTime(1980, 1, 1)) { AuthorId = "1" }
             };
 
-            var result = await bookService.UpdateBook("123", updateDto);
+            var service = new JSONBookService<Book>();
 
-            Assert.NotNull(result);
-            Assert.Equal("NewTitle", result.Title);
-            Assert.Equal("NewGenre", result.Genre);
+            var fileName = "BookJsonFile.json";
+
+             service.WriteJSONInFile(book);
+
+            Assert.True(File.Exists(fileName), "JSON file was not created.");
+
+            var fileContent = await File.ReadAllTextAsync(fileName);
+            var deserializedBook = JsonSerializer.Deserialize<Book>(fileContent);
+
+            Assert.NotNull(deserializedBook);
+            Assert.Equal(book.Isbn, deserializedBook.Isbn);
+            Assert.Equal(book.Title, deserializedBook.Title);
+            Assert.Equal(book.Genre, deserializedBook.Genre);
+            Assert.Equal(book.Available, deserializedBook.Available);
+            Assert.Equal(book.AuthorId, deserializedBook.AuthorId);
+            Assert.NotNull(deserializedBook.Author);
+            Assert.Equal(book.Author.Name, deserializedBook.Author.Name);
+
+            if (File.Exists(fileName))
+            File.Delete(fileName);
         }
-
-        [Fact]
-        public async Task CreateBook_ShouldCreate_WhenAuthorExists()
-        {
-            var mockBookRepo = new Mock<IGenericRepository<Book>>();
-            var mockAuthorRepo = new Mock<IGenericRepository<Author>>();
-
-            var author = new Author("Ivo", "Andric");
-            mockAuthorRepo.Setup(r => r.GetOneAsync("1")).ReturnsAsync(author);
-
-            var bookService = new BookService(mockBookRepo.Object, mockAuthorRepo.Object);
-
-            var createDto = new BookCreateDTO
-            {
-                Title = "Na Drini Cuprija",
-                Genre = "Roman",
-                Available = true
-            };
-
-            var createdBook = new Book("12345", "Na Drini Cuprija", "Roman", true, "1");
-
-            mockBookRepo.Setup(r => r.CreateAsync(It.IsAny<Book>())).ReturnsAsync(createdBook);
-
-            var result = await bookService.CreateBook(createDto, "1");
-
-            Assert.NotNull(result);
-            Assert.Equal("Na Drini Cuprija", result.Title);
-            Assert.Equal("Roman", result.Genre);
-    }
-    
-        [Theory]
-        [InlineData("123", "123", true)]
-        [InlineData("123", "456", false)]
-        public void Book_Equals_ReturnsExpected(string isbn1, string isbn2, bool expected)
-        {
-            var book1 = new Book { Isbn = isbn1 };
-            var book2 = new Book { Isbn = isbn2 };
-
-            Assert.Equal(expected, book1.Equals(book2));
-        }
-    }
+}

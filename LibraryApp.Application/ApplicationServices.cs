@@ -4,6 +4,7 @@ using LibraryApp.Application.Interfaces;
 using FluentValidation;
 using LibraryApp.Application.Validators;
 using LibraryApp.Application.DTOs.RequestDTO.Address;
+using LibraryApp.Application.Services.JSONServices;
 namespace LibraryApp.Application;
 
 public static class ApplicationServices
@@ -23,7 +24,12 @@ public static class ApplicationServices
         services.AddScoped<IValidator<Author>, AuthorValidator>();
         services.AddScoped<IValidator<AddressCreateDTO>, AddressValidator>();
         services.AddScoped<IValidator<Customer>, CustomerValidator>();
-
+        services.AddScoped<IJSONService<Book>, JSONBookService<Book>>();
+        services.AddScoped<IJSONService<Address>, JSONAddressService<Address>>();
+        services.AddScoped<IJSONService<Admin>, JSONAdminService<Admin>>();
+        services.AddScoped<IJSONService<Author>, JSONAuthorService<Author>>();
+        services.AddScoped<IJSONService<City>, JSONCityService<City>>();
+        services.AddScoped<IJSONService<Customer>, JSONCustomerService<Customer>>();
 
         return services;
     }

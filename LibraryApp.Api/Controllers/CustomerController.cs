@@ -66,7 +66,7 @@ public class CustomerController : ControllerBase
         }
         var createdCustomer = await customerService.CreateCustomer(customerToCreate);
         var createdCustomerDto = createdCustomer.MapDomainEntityToDTO();
-        return CreatedAtAction(nameof(GetCustomer),new{jmbg=createdCustomer.JMBG}, createdCustomerDto);
+        return CreatedAtAction(nameof(GetCustomer),new{jmbg=createdCustomer.jmbg}, createdCustomerDto);
     }
 
     [HttpPut("{jmbg}")]
