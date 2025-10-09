@@ -11,13 +11,16 @@ namespace LibraryApp.Application.Services;
 public class AdminService : IAdminService
 {
     private readonly IGenericRepository<Admin> adminRepository;
+    private readonly IJSONService<Admin> adminJSON;
+
     /// <summary>
     /// Inicijalizuje novi <see cref="AdminService"/> sa prosleđenim repozitorijumom za administratore.
     /// </summary>
     /// <param name="adminRepository">Generički repozitorijum za entitet <see cref="Admin"/>.</param>
-    public AdminService(IGenericRepository<Admin> adminRepository)
+    public AdminService(IGenericRepository<Admin> adminRepository, IJSONService<Admin>? adminJSON)
     {
         this.adminRepository = adminRepository;
+        this.adminJSON = adminJSON;
     }
     /// <summary>
     /// Vraca sve admine iz baze 
@@ -42,6 +45,7 @@ public class AdminService : IAdminService
         var admin = await adminRepository.GetOneAsync(adminId);
         if (admin == null) throw new AdminNotFoundException(adminId);
         var adminDto = admin.MapDomainEntityToDTO();
+        adminJSON.WriteJSONInFile(admin);
         return adminDto;
     }
     /// <summary>

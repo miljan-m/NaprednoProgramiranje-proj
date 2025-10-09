@@ -10,14 +10,16 @@ namespace LibraryApp.Application.Services;
 /// </summary>
 public class CustomerService : ICustomerService
 {
+    private readonly IJSONService<Customer> customerJSON;
     private readonly IGenericRepository<Customer> customerRepository;
     /// <summary>
     /// Inicijalizuje novi <see cref="CustomerService"/> sa prosleđenim repozitorijumom za kupce
     /// </summary>
     /// <param name="customerRepository">Generički repozitorijum za entitet <see cref="Customer"/></param>
-    public CustomerService(IGenericRepository<Customer> customerRepository)
+    public CustomerService(IGenericRepository<Customer> customerRepository, IJSONService<Customer> customerJSON)
     {
         this.customerRepository = customerRepository;
+        this.customerJSON = customerJSON;
     }
     /// <summary>
     /// Vraća sve kupce iz baze
@@ -43,6 +45,7 @@ public class CustomerService : ICustomerService
         if (jmbg.Length < 0 ||  jmbg.Length > 13) throw new CustomerInvalidArgumentException(jmbg);
         var customer = await customerRepository.GetOneAsync(jmbg);
         if (customer == null) throw new CustomerNotFoundException(jmbg);
+        customerJSON.WriteJSONInFile(customer);
         return customer.MapDomainEntityToDTO();
     }
     /// <summary>

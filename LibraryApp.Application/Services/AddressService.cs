@@ -15,14 +15,15 @@ public class AddressService : IAddressService
 
     private readonly IGenericRepository<Address> addressRepository;
     private readonly IGenericRepository<City> cityRepository;
+    private readonly IJSONService<Address> addressJSON;
     /// <summary>
     /// Inicijalizuje novi <see cref="AddressService"/> sa prosleđenim repozitorijumima za adrese i gradove.
     /// </summary>
     /// <param name="addressRepository">Generički repozitorijum za entitet <see cref="Address"/>.</param>
     /// <param name="cityRepository">Generički repozitorijum za entitet <see cref="City"/>.</param>
-    public AddressService(IGenericRepository<Address> addressRepository, IGenericRepository<City> cityRepository)
+    public AddressService(IGenericRepository<Address> addressRepository, IGenericRepository<City> cityRepository,IJSONService<Address>? addressJSON)
     {
-
+        this.addressJSON = addressJSON;
         this.addressRepository = addressRepository;
         this.cityRepository = cityRepository;
     }
@@ -73,6 +74,7 @@ public class AddressService : IAddressService
     public async Task<Address> GetAddress(string id)
     {
         var address = await addressRepository.GetOneAsync(id);
+        addressJSON.WriteJSONInFile(address);
         return address;
     }
     /// <summary>

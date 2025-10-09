@@ -23,7 +23,7 @@ public class Customer : IBaseEntity
     /// Jedinstveni matični broj građana (JMBG) koji služi kao primarni ključ korisnika.
     /// </summary>
     [Key]
-    public string jmbg;
+    public string jmbg { get; set; }
     /// <summary>
     /// Podrazumevani konstruktor klase <see cref="Customer"/>.
     /// </summary>

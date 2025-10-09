@@ -12,16 +12,19 @@ public class BookService : IBookService
     
     private readonly IGenericRepository<Book> bookRepository;
     private readonly IGenericRepository<Author> authorRepository;
+    private readonly IJSONService<Book> bookJSON;
+
     /// <summary>
     /// Inicijalizuje novi <see cref="BookService"/> sa prosleđenim repozitorijumima za knjige i autore
     /// </summary>
     /// <param name="bookRepository">Generički repozitorijum za entitet <see cref="Book"/></param>
     /// <param name="authorRepository">Generički repozitorijum za entitet <see cref="Author"/></param>
-    public BookService(IGenericRepository<Book> bookRepository, IGenericRepository<Author> authorRepository)
+    public BookService(IGenericRepository<Book> bookRepository, IGenericRepository<Author> authorRepository, IJSONService<Book> bookJSON)
     {
 
         this.bookRepository = bookRepository;
         this.authorRepository = authorRepository;
+        this.bookJSON = bookJSON;
     }
 /// <summary>
     /// Vraca sve knjige iz baze podataka.
@@ -53,9 +56,10 @@ public class BookService : IBookService
         if (isbnValid == false) throw new BookInvalidArgumentException(isbn);
         var book = await bookRepository.GetOneAsync(isbn);
         if (book == null) throw new BookNotFoundException(isbn);
+        bookJSON.WriteJSONInFile(book);
         return book.MapDomainEntityToDTO();
     }
-/// <summary>
+    /// <summary>
     /// Kreira novu knjigu i povezuje je sa autorom
     /// </summary>
     /// <param name="bookCreateDTO">DTO objekat koji sadrži podatke o novoj knjizi</param>

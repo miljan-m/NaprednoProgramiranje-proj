@@ -11,13 +11,16 @@ namespace LibraryApp.Application.Services;
 public class AuthorService : IAuthorService
 {
     private readonly IGenericRepository<Author> authorRepository;
+    private readonly IJSONService<Author> authorJSON;
+
     /// <summary>
     /// Inicijalizuje novi <see cref="AuthorService"/> sa prosleđenim repozitorijumom za autore
     /// </summary>
     /// <param name="authorRepository">Generički repozitorijum za entitet <see cref="Author"/>.</param>
-    public AuthorService(IGenericRepository<Author> authorRepository)
+    public AuthorService(IGenericRepository<Author> authorRepository, IJSONService<Author>? authorJSON)
     {
         this.authorRepository = authorRepository;
+        this.authorJSON = authorJSON;
     }
     /// <summary>
     /// Vraca sve autore iz baze 
@@ -41,6 +44,7 @@ public class AuthorService : IAuthorService
     {
         var author = await authorRepository.GetOneAsync(authorId);
         if (author == null) throw new AuthorNotFoundException(authorId);
+        authorJSON.WriteJSONInFile(author);
         return author;
     }
     /// <summary>
