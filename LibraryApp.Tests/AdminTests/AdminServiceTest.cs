@@ -14,99 +14,14 @@ using LibraryApp.Application.DTOs.RequestDTO.Admin;
 using LibraryApp.Application.Services.JSONServices;
 using System.Text.Json;
 
-namespace LibraryApp.Tests;
+namespace LibraryApp.Tests.AdminTests;
 
 
 public class AdminServiceTest
 {
 
-    //testovi za konstruktor
-    [Fact]
-    public void Constructor_InputOk_CreatesValidAdmin()
-    {
-        var admin = new Admin("1", "Miljan", "Mitic", null);
-        Assert.NotNull(admin);
-        Assert.Equal("1", admin.AdminId);
-        Assert.Equal("Miljan", admin.FirstName);
-        Assert.Equal("Mitic", admin.LastName);
-        Assert.Equal(null, admin.DateOfBirth);
-    }
-
-    [Fact]
-    public void Constructor_NameIsNullOrEmpty_ThowsExcpetion()
-    {
-        Assert.Throws<ArgumentException>(() => new Admin("1", "", "Mitic", null));
-        Assert.Throws<ArgumentException>(() => new Admin("1", null, "Mitic", null));
-    }
-
-
-    [Fact]
-    public void Constructor_LastNameIsNullOrEmpty_ThowsExcpetion()
-    {
-        Assert.Throws<ArgumentException>(() => new Admin("1", "Miljan", "", null));
-        Assert.Throws<ArgumentException>(() => new Admin("1", "Miljan", null, null));
-    }
-
-
-    [Fact]
-    public void Constructor_IdIsNullOrEmpty_ThowsExcpetion()
-    {
-        Assert.Throws<ArgumentException>(() => new Admin("", "Miljan", "Mitic", null));
-        Assert.Throws<ArgumentException>(() => new Admin(null, "Miljan", "Mitic", null));
-    }
-
-
     //testovi za validatore
-    [Fact]
-    public void Validator_AllOK_ValidatorNoError()
-    {
-        var admin = new Admin("1", "Miljan", "Mitic", null);
-        var validator = new AdminValidator();
-        var result = validator.TestValidate(admin);
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Fact]
-    public void Validator_IdEmptyOrNull_ValidatoError()
-    {
-        var admin = new Admin();
-        admin.AdminId = "";
-        admin.FirstName = "Miljan";
-        admin.LastName = "Mitic";
-
-        var validator = new AdminValidator();
-        var result = validator.TestValidate(admin);
-        result.ShouldHaveValidationErrorFor(x => x.AdminId);
-    }
-
-    [Fact]
-    public void Validator_NameEmptyOrNull_ValidatorError()
-    {
-        var admin = new Admin();
-        admin.AdminId = "";
-        admin.FirstName = "";
-        admin.LastName = "Mitic";
-
-        var validator = new AdminValidator();
-        var result = validator.TestValidate(admin);
-        result.ShouldHaveValidationErrorFor(x => x.FirstName);
-    }
-
-    [Fact]
-    public void Validator_LastNameEmptyOrNull_ValidatorError()
-    {
-        var admin = new Admin();
-        admin.AdminId = "";
-        admin.FirstName = "Miljan";
-        admin.LastName = "";
-
-        var validator = new AdminValidator();
-        var result = validator.TestValidate(admin);
-        result.ShouldHaveValidationErrorFor(x => x.LastName);
-
-    }
-
-
+    
     //testovi za servise
     [Fact]
     public async Task GetAdmin_ById_ReturnsAdmin()
@@ -237,25 +152,4 @@ public class AdminServiceTest
         Assert.Equal(expected, admin1.Equals(admin2));
     }
     
-    [Fact]
-    public async Task WriteJSONInFile_WritesCorrectAdminJson()
-    {
-        var service = new JSONAdminService<Admin>();
-        var admin = new Admin("1", "Miljan", "Mitic", new DateTime(1990, 1, 1));
-        var fileName = "AdminJsonFile.json";
-
-         service.WriteJSONInFile(admin);
-        Assert.True(File.Exists(fileName), "JSON file should exist after writing.");
-
-        var fileContent = await File.ReadAllTextAsync(fileName);
-        var deserialized = JsonSerializer.Deserialize<Admin>(fileContent);
-
-        Assert.NotNull(deserialized);
-        Assert.Equal(admin.AdminId, deserialized.AdminId);
-        Assert.Equal(admin.FirstName, deserialized.FirstName);
-        Assert.Equal(admin.LastName, deserialized.LastName);
-        Assert.Equal(admin.DateOfBirth, deserialized.DateOfBirth);
-
-        File.Delete(fileName);
-    }
 }

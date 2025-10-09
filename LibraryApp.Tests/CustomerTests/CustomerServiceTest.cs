@@ -13,108 +13,12 @@ using FluentValidation.TestHelper;
 using System.Text.Json;
 using LibraryApp.Application.Services.JSONServices;
 
-namespace LibraryApp.Tests;
+namespace LibraryApp.Tests.CustomerTests;
 
 
 public class CustomerServiceTest
 {
-    //testovi za konstruktor
-    [Fact]
-    public void Constructor_ValidInput_CreatesCustomer()
-    {
-        var customer = new Customer("Miljan", "Mitic", "1234567890123");
-
-        Assert.NotNull(customer);
-        Assert.Equal("Miljan", customer.FirstName);
-        Assert.Equal("Mitic", customer.LastName);
-        Assert.Equal("1234567890123", customer.jmbg);
-    }
-
-    [Fact]
-    public void Constructor_InvalidFirstName_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new Customer("", "Mitic", "1234567890123"));
-        Assert.Throws<ArgumentException>(() => new Customer(null, "Mitic", "1234567890123"));
-    }
-
-    [Fact]
-    public void Constructor_InvalidLastName_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new Customer("Miljan", "", "1234567890123"));
-        Assert.Throws<ArgumentException>(() => new Customer("Miljan", null, "1234567890123"));
-    }
-
-    [Fact]
-    public void Constructor_InvalidJMBG_ThrowsException()
-    {
-        Assert.Throws<ArgumentException>(() => new Customer("Miljan", "Mitic", ""));
-        Assert.Throws<ArgumentException>(() => new Customer("Miljan", "Mitic", null));
-        Assert.Throws<ArgumentException>(() => new Customer("Miljan", "Mitic", "123")); // manje od 13 cifara
-        Assert.Throws<ArgumentException>(() => new Customer("Miljan", "Mitic", "123456789012A")); // ne-numerički
-    }
-}
-
-// testovi za validatore
-
-public class CustomerValidatorTest
-{
-
-    [Fact]
-    public void Validator_ValidCustomer_NoValidationErrors()
-    {
-        var customer = new Customer("Miljan", "Mitic", "1234567890123");
-        var validator = new CustomerValidator();
-        var result = validator.TestValidate(customer);
-
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Fact]
-    public void Validator_FirstNameEmpty_ValidationError()
-    {
-        var customer = new Customer();
-        customer.FirstName = "";
-        customer.LastName = "Mitic";
-        customer.jmbg = "1706002744116";
-        var validator = new CustomerValidator();
-
-        var result = validator.TestValidate(customer);
-
-        result.ShouldHaveValidationErrorFor(x => x.FirstName)
-            .WithErrorMessage("First name must be entered");
-    }
-
-    [Fact]
-    public void Validator_LastNameEmpty_ValidationError()
-    {
-        var customer = new Customer();
-        customer.FirstName = "Miljan";
-        customer.LastName = "";
-        customer.jmbg = "1706002744116";
-        var validator = new CustomerValidator();
-
-        var result = validator.TestValidate(customer);
-
-        result.ShouldHaveValidationErrorFor(x => x.LastName)
-            .WithErrorMessage("Last name cannot be empty string");
-    }
-
-    [Fact]
-    public void Validator_JMBGInvalidLength_ValidationError()
-    {
-        var customer = new Customer();
-        customer.FirstName = "Miljan";
-        customer.LastName = "";
-        customer.jmbg = "1asd";
-        var validator = new CustomerValidator();
-
-        var result = validator.TestValidate(customer);
-
-        result.ShouldHaveValidationErrorFor(x => x.jmbg).WithErrorMessage("JMBG must be 13 diggit number");
-    }
-
-
-    // testovi za servise
+   
 
 
     [Fact]
@@ -233,26 +137,4 @@ public class CustomerValidatorTest
         Assert.Equal(expected, c1.Equals(c2));
     }
 
-    [Fact]
-    public async Task WriteJSONInFile_ShouldCreateJsonFile_WithCorrectContent()
-    {
-        var customer = new Customer("Miljan", "Mitic", "1234567890123");
-        var service = new JSONCustomerService<Customer>();
-        var fileName = "CustomerJsonFile.json";
-
-        service.WriteJSONInFile(customer);
-
-        Assert.True(File.Exists(fileName), "JSON file was not created.");
-
-        var fileContent = await File.ReadAllTextAsync(fileName);
-        var deserializedCustomer = JsonSerializer.Deserialize<Customer>(fileContent);
-
-        Assert.NotNull(deserializedCustomer);
-        Assert.Equal(customer.FirstName, deserializedCustomer.FirstName);
-        Assert.Equal(customer.LastName, deserializedCustomer.LastName);
-        Assert.Equal(customer.jmbg, deserializedCustomer.jmbg);
-
-        if (File.Exists(fileName))
-            File.Delete(fileName);
-    }
 }
